@@ -1,0 +1,8 @@
+flowchart LR
+  BACKLOG -->|pm| AWAIT_APPROVAL -->|you| DESIGN -->|architect| READY -->|developer| IN_REVIEW
+  IN_REVIEW -->|reviewer| UAT -->|uat| READY_TO_LAND -->|landing queue| DONE
+  IN_REVIEW -. fail .-> IN_PROGRESS
+  UAT -. fail .-> IN_PROGRESS
+  IN_PROGRESS -->|developer| IN_REVIEW
+  READY_TO_LAND -. conflict or failed verify .-> NEEDS_INTEGRATION
+  NEEDS_INTEGRATION -. fix, then em land .-> READY_TO_LAND

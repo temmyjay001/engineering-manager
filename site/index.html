@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>emorg, an engineering org that runs on your laptop</title>
+  <meta name="description" content="emorg turns a request into a ticket and drives it through PM, architect, developer, reviewer, and UAT agents, each in its own locked-down session.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="wordmark">emorg</span>
+    <a href="https://github.com/temmyjay001/engineering-manager">GitHub</a>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <h1>An engineering org that runs on your laptop.</h1>
+    <p class="hero-sub">emorg turns a request into a ticket and drives it through PM, architect, developer, reviewer, and UAT agents, each in its own locked-down session. Work only counts as done when an independent review passes, UAT passes against the running app, and the merge lands verified on your base branch.</p>
+    <div class="codeblock" data-copy>
+      <button class="copy" type="button" aria-label="Copy install commands">copy</button>
+      <pre><code>npm install -g emorg
+em init</code></pre>
+    </div>
+    <span class="badge">0.1.0-beta</span>
+  </section>
+
+  <section class="pipeline">
+    <div class="diagram" tabindex="0">
+      <picture>
+        <source srcset="assets/pipeline-dark.svg" media="(prefers-color-scheme: dark)">
+        <img src="assets/pipeline-light.svg" alt="Pipeline flowchart: BACKLOG through AWAIT_APPROVAL, DESIGN, READY, IN_REVIEW, UAT, READY_TO_LAND to DONE, with failure paths looping back to IN_PROGRESS and a NEEDS_INTEGRATION detour for merges that conflict or fail verification.">
+      </picture>
+    </div>
+    <p class="caption">Failures loop back with the exact defect report. Merges that conflict or fail verification park honestly instead of lying.</p>
+  </section>
+
+  <section class="duties">
+    <h2>Separation of duties</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>The reviewer cannot edit.</h3>
+        <p>Its session has no write tools at all. It judges the diff and nothing else.</p>
+      </div>
+      <div class="card">
+        <h3>The developer cannot grade itself.</h3>
+        <p>Verdicts come only from gate roles it never controls.</p>
+      </div>
+      <div class="card">
+        <h3>Gates cannot look outside.</h3>
+        <p>Reviewer and UAT reads are mechanically denied outside the ticket's worktree. Enforced by the permission layer, not by prompt.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-queue">
+    <h2>DONE cannot lie.</h2>
+    <p>Parallel agents produce parallel branches, and merge-on-green corrupts them. emorg lands one ticket at a time through a serialized queue: sync the branch with the current base, re-run your verify command against the merged tree, squash, and advance the base fast-forward only. A conflict or a failed verification parks the ticket as NEEDS_INTEGRATION for a human. The base branch only ever moves to a commit that passed your tests as merged.</p>
+    <pre class="codeline"><code>"verifyCommand": "npm test"</code></pre>
+  </section>
+
+  <section class="costs">
+    <h2>Runs on the subscriptions you already pay for.</h2>
+    <p>Roles map to providers per your config: your Claude subscription for the builders, a cheap Gemini flash model for the PM and meetings, or any OpenAI-compatible runner. Every agent run records its real tokens and dollars, per role, per model, per provider, including failed and cancelled runs. <code>em report</code> shows where the money went.</p>
+    <pre class="report"><code>role        runs     tokens     usd
+developer     49    936,614   75.26
+uat           33    733,229   72.00
+architect     40    364,478   64.56
+reviewer      47    493,909   28.56
+pm            64  3,543,927   12.63
+total        233  6,072,157  253.01</code></pre>
+  </section>
+
+  <section class="machine">
+    <h2>It respects the machine it runs on.</h2>
+    <ul>
+      <li>Bounded concurrency: agent slots cap simultaneous sessions and browsers.</li>
+      <li>Idle watchdog: a stalled agent stream is cut after 15 silent minutes, recorded, and retried through the normal loop.</li>
+      <li>Crash recovery: interrupted runs are swept on the next start, flagged in <code>em status</code>, and resumable with one command.</li>
+      <li>Sleep assertions: the machine is held awake for exactly the lifetime of a run, on macOS, Linux, and Windows.</li>
+    </ul>
+  </section>
+
+  <section class="dashboard">
+    <figure>
+      <img src="assets/dashboard.png" alt="The emorg dashboard board view in grayscale: ticket columns from Needs approval through Design, In progress, In review, UAT, Landing, and Done, with tickets in each.">
+      <figcaption>Board, ticket detail with per-stage cost, live run logs, drafts with the PM, meetings, and reports. One dashboard serves every registered project.</figcaption>
+    </figure>
+  </section>
+
+  <section class="quickstart">
+    <h2>Quickstart</h2>
+    <div class="codeblock" data-copy>
+      <button class="copy" type="button" aria-label="Copy quickstart commands">copy</button>
+      <pre><code>npm install -g emorg
+cd your-project &amp;&amp; em init
+em new "Add a dark mode toggle to the settings page"
+em run EM-1        # PM drafts criteria, stops for you
+em approve EM-1    # design -&gt; build -&gt; review -&gt; UAT -&gt; land</code></pre>
+    </div>
+    <p>Epics decompose big goals into dependency-ordered subtickets and build them in parallel. Custom gates are a markdown file away.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>emorg 0.1.0-beta.</span>
+    <span class="footer-links">
+      <a href="https://github.com/temmyjay001/engineering-manager">GitHub</a>
+      <a href="https://github.com/temmyjay001/engineering-manager/tree/main/docs">Docs</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('[data-copy]').forEach((block) => {
+    const button = block.querySelector('.copy');
+    button.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(block.querySelector('code').innerText);
+      button.textContent = 'copied';
+      setTimeout(() => { button.textContent = 'copy'; }, 1500);
+    });
+  });
+</script>
+
+</body>
+</html>

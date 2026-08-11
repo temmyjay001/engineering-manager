@@ -1,0 +1,58 @@
+{
+  "runCommand": "WEB_PORT=4799 npx tsx src/web/main.ts",
+  "appUrl": "http://localhost:4799",
+  "verifyCommand": "npm install --no-audit --no-fund >/dev/null 2>&1 && npx vitest run",
+  "mergeStrategy": "merge",
+  "ticketPrefix": "EM",
+  "epicPrefix": "EP",
+  "baseBranch": "main",
+  "maxParallelSubtickets": 2,
+  "maxConcurrentAgents": 2,
+  "maxAttempts": 3,
+  "maxTicketBudgetUsd": 12,
+  "monthlyBudgetUsd": 100,
+  "meetingModel": "claude-sonnet-5",
+  "meetingMaxTurns": null,
+  "approvalMode": "epic-once",
+  "opencodeServerUrl": null,
+  "conventionFiles": [
+    "CLAUDE.md",
+    "AGENTS.md"
+  ],
+  "otelEndpoint": null,
+  "otelHeaders": {},
+  "mcpServers": {},
+  "pipeline": [
+    "pm",
+    "architect",
+    "developer",
+    "reviewer",
+    "uat"
+  ],
+  "roles": {
+    "planner": {
+      "runner": "gemini-acp",
+      "model": "gemini-3-flash"
+    },
+    "pm": {
+      "model": "claude-sonnet-5"
+    },
+    "architect": {
+      "model": "claude-opus-4-8",
+      "maxTurns": 45
+    },
+    "developer": {
+      "model": "claude-sonnet-5",
+      "maxTurns": 150
+    },
+    "reviewer": {
+      "model": "claude-sonnet-5",
+      "maxTurns": 40
+    },
+    "uat": {
+      "model": "claude-sonnet-5",
+      "maxTurns": 150
+    }
+  },
+  "runners": {}
+}
