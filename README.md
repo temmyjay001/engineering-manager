@@ -293,3 +293,7 @@ For dashboard UI work with hot reload, run the API and the Vite dev server side 
 npm run web:api           # API server on :4788 (no UI build)
 npm run ui:dev            # Vite dev server with HMR, proxies /api to :4788
 ```
+
+## License
+
+[MIT](LICENSE)

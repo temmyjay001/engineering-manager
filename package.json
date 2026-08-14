@@ -1,7 +1,7 @@
 {
   "name": "emorg",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.0-beta.1",
+  "private": false,
   "type": "module",
   "description": "A local engineering org run by isolated AI agents: tickets, design, code, review, UAT loops, and gated state transitions.",
   "bin": {
@@ -78,5 +78,6 @@
     "gemini",
     "agent-orchestration",
     "cli"
-  ]
+  ],
+  "license": "MIT"
 }
