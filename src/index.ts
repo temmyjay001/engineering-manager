@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -91,11 +91,29 @@ function loadEnv(path: string): void {
   }
 }
 
+function loadEnvOverride(path: string): void {
+  let raw: string;
+  try {
+    raw = readFileSync(path, 'utf8');
+  } catch {
+    return;
+  }
+  for (const line of raw.split('\n')) {
+    const m = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (!m) continue;
+    let value = m[2]!;
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    process.env[m[1]!] = value;
+  }
+}
+
 function openCtx(): Ctx {
   const reaped = sweepOrphans();
   if (reaped > 0) console.error(`reaped ${reaped} orphaned agent process${reaped === 1 ? '' : 'es'} from dead runs`);
   const project = openProject();
-  loadEnv(join(project.root, '.env'));
+  loadEnvOverride(join(project.root, '.env'));
   const store = new Store(project.dbPath, {
     ticketPrefix: project.config.ticketPrefix,
     epicPrefix: project.config.epicPrefix,
@@ -708,8 +726,12 @@ function clean(ctx: Ctx): void {
 
 function doctor(): void {
   let failures = 0;
+  let warnings = 0;
   const ok = (msg: string) => console.log(`  ok    ${msg}`);
-  const warn = (msg: string) => console.log(`  warn  ${msg}`);
+  const warn = (msg: string) => {
+    console.log(`  warn  ${msg}`);
+    warnings += 1;
+  };
   const bad = (msg: string) => {
     console.log(`  fail  ${msg}`);
     failures += 1;
@@ -772,11 +794,22 @@ function doctor(): void {
   }
 
   if (process.env.ANTHROPIC_API_KEY) ok('ANTHROPIC_API_KEY is set');
-  else warn('ANTHROPIC_API_KEY not set; agents will use your Claude Code login if present');
+  else {
+    let loggedIn = false;
+    try {
+      execFileSync('claude', ['--version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      loggedIn = existsSync(join(os.homedir(), '.claude.json')) || existsSync(join(os.homedir(), '.claude', '.credentials.json'));
+    } catch {
+      /* claude CLI not installed */
+    }
+    if (loggedIn) ok('no ANTHROPIC_API_KEY, but a Claude Code login is present');
+    else warn('no ANTHROPIC_API_KEY and no Claude Code login found; claude runners will not authenticate until one exists');
+  }
 
   console.log('');
   if (failures > 0) fail(`${failures} check${failures === 1 ? '' : 's'} failed.`);
-  console.log('All checks passed.');
+  if (warnings > 0) console.log(`Passed with ${warnings} warning${warnings === 1 ? '' : 's'}.`);
+  else console.log('All checks passed.');
   const freeGb = os.freemem() / 1024 ** 3;
   const totalGb = os.totalmem() / 1024 ** 3;
   const headroom = Math.max(1, Math.floor((freeGb - 2) / 2.5));

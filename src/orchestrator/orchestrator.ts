@@ -37,10 +37,6 @@ export function cancelRun(store: Store, target: string): boolean {
   return requested;
 }
 
-// A sleeping machine freezes agent streams into dead sockets that never error;
-// hold an idle-sleep assertion for the lifetime of the run. Display sleep and
-// lid-close still behave normally. Each helper is tied to this process's pid
-// so the assertion can never outlive the run, and all of it is best-effort.
 function stayAwakeCommand(): { command: string; args: string[] } | null {
   const pid = String(process.pid);
   if (process.platform === 'darwin') return { command: 'caffeinate', args: ['-i', '-w', pid] };

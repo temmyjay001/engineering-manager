@@ -41,11 +41,12 @@ done:
   not yet reflected on the base branch. This state is not terminal: the ticket
   sits here until it lands or fails to land.
 - **`NEEDS_INTEGRATION`** — a landing attempt was made and failed: the worktree
-  could not be synced with the base without a conflict, re-verification of the
-  merged tree failed, or (for the `pr` merge strategy) pushing the branch or
-  opening the pull request failed. This state is also not terminal. The
-  transition carries a human-readable note describing what went wrong and how to
-  retry.
+  could not be synced with the base without a conflict, or re-verification of
+  the merged tree failed. This state is also not terminal. The transition
+  carries a human-readable note describing what went wrong and how to retry.
+  Under the `pr` merge strategy, a failed push or pull-request creation instead
+  leaves the ticket in `READY_TO_LAND` with the failure logged, since nothing
+  about the branch itself needs integration work.
 
 A ticket only reaches `DONE` once its work is provably on the base (or a pull
 request has been opened, depending on merge strategy). Nothing marks a ticket done

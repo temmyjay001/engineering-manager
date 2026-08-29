@@ -190,10 +190,17 @@ export function advanceBase(project: Project, ref: string, expectedSha: string, 
 export function commitAll(project: Project, key: string, message: string): void {
   const path = worktreePath(project, key);
   git(path, ['add', '-A']);
+  if (git(path, ['status', '--porcelain']) === '') return;
+  let identity: string[] = [];
   try {
-    git(path, ['commit', '-m', message]);
+    git(path, ['config', 'user.email']);
   } catch {
-    /* nothing to commit */
+    identity = ['-c', 'user.name=em', '-c', 'user.email=em@agents.local'];
+  }
+  try {
+    git(path, [...identity, '-c', 'commit.gpgsign=false', 'commit', '--no-verify', '-m', message]);
+  } catch (err) {
+    throw new Error(`git commit failed in the ${key} worktree; the agent's changes are staged but not committed: ${(err as Error).message}`);
   }
 }
 

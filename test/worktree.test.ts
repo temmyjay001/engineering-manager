@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   advanceBase,
+  commitAll,
   createWorktree,
   ensureWorktree,
   resolveBase,
@@ -169,5 +170,41 @@ describe('ensureWorktree', () => {
 
   it('returns false when the branch is gone too', () => {
     expect(ensureWorktree(project, 'EM-9')).toBe(false);
+  });
+});
+
+describe('commitAll honesty', () => {
+  it('bypasses failing pre-commit hooks for internal worktree commits', () => {
+    createWorktree(project, 'EM-20');
+    const wtPath = worktreePath(project, 'EM-20');
+    const hookDir = join(wtPath, '.hooks');
+    execFileSync('mkdir', ['-p', hookDir]);
+    writeFileSync(join(hookDir, 'pre-commit'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+    git(wtPath, ['config', 'core.hooksPath', '.hooks']);
+    writeFileSync(join(wtPath, 'work.txt'), 'agent work\n');
+
+    commitAll(project, 'EM-20', 'EM-20: work');
+    expect(git(wtPath, ['log', '--format=%s', '-1'])).toBe('EM-20: work');
+    expect(git(wtPath, ['status', '--porcelain'])).toBe('');
+  });
+
+  it('is a quiet no-op when there is nothing to commit', () => {
+    createWorktree(project, 'EM-21');
+    const before = git(worktreePath(project, 'EM-21'), ['rev-parse', 'HEAD']);
+    commitAll(project, 'EM-21', 'EM-21: nothing');
+    expect(git(worktreePath(project, 'EM-21'), ['rev-parse', 'HEAD'])).toBe(before);
+  });
+
+  it('throws loudly when the commit genuinely fails instead of losing work', () => {
+    createWorktree(project, 'EM-22');
+    const wtPath = worktreePath(project, 'EM-22');
+    const hookDir = join(wtPath, '.hooks');
+    execFileSync('mkdir', ['-p', hookDir]);
+    writeFileSync(join(hookDir, 'prepare-commit-msg'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+    git(wtPath, ['config', 'core.hooksPath', '.hooks']);
+    writeFileSync(join(wtPath, 'work.txt'), 'agent work\n');
+
+    expect(() => commitAll(project, 'EM-22', 'EM-22: work')).toThrow(/staged but not committed/);
+    expect(git(wtPath, ['status', '--porcelain'])).toContain('work.txt');
   });
 });

@@ -82,7 +82,7 @@ total        233  6,072,157  253.01</code></pre>
       <li>Bounded concurrency: agent slots cap simultaneous sessions and browsers.</li>
       <li>Idle watchdog: a stalled agent stream is cut after 15 silent minutes, recorded, and retried through the normal loop.</li>
       <li>Crash recovery: interrupted runs are swept on the next start, flagged in <code>em status</code>, and resumable with one command.</li>
-      <li>Sleep assertions: the machine is held awake for exactly the lifetime of a run, on macOS, Linux, and Windows.</li>
+      <li>Sleep assertions: the machine is held awake for exactly the lifetime of a run, on macOS and Linux. Windows support is experimental.</li>
     </ul>
   </section>
 

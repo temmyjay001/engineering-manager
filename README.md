@@ -40,11 +40,18 @@ For tickets with a UI, UAT gets a real browser through the Playwright MCP server
 Requires Node 20.12+ and git.
 
 ```bash
-npm install
-npm run build
+npm install -g emorg
 cd /path/to/your/project   # the repo the org should build in
 em init
 em doctor                  # verify the environment
+```
+
+To run from a clone instead:
+
+```bash
+git clone https://github.com/temmyjay001/engineering-manager.git && cd engineering-manager
+npm install && npm run build
+npm link                   # puts the em binary on your PATH
 ```
 
 `em init` creates a `.em/` directory in your repo. Everything em knows about the project lives there: the database, per-ticket worktrees, scratch space, and `config.json`. Each repo gets its own board; `em` finds the project by walking up from wherever you run it.
@@ -59,9 +66,8 @@ Auth: agents use your existing Claude Code login if present, otherwise set `ANTH
 em new "Add a dark mode toggle to the settings page"
 em run EM-1          # PM drafts the ticket + criteria, then stops for you
 em show EM-1         # review the criteria
-em approve EM-1      # approve, then it runs design -> dev -> review -> uat -> ready_to_land
-em land EM-1         # land the ready ticket: sync, re-verify, squash-commit, done
-em land              # land everything that is READY_TO_LAND
+em approve EM-1      # approve, then it runs design -> dev -> review -> uat and lands
+em land EM-3         # re-land a parked ticket, or land anything left READY_TO_LAND
 em close EM-3 "superseded by EM-7"   # close a ticket that will never be built
 em status            # see all tickets
 em show EM-1 UAT     # read any artifact: TICKET | PLAN | DIFF | REVIEW | UAT | EVIDENCE

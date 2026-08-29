@@ -163,9 +163,6 @@ export interface AgentRunner {
 
 class NonRetryableError extends AgentRunFailedError {}
 
-// Resolve the deepest existing ancestor's realpath so a symlink under an
-// allowed directory cannot smuggle the target outside it; the not-yet-existing
-// tail (a file about to be written) is appended back unresolved.
 function realpathDeep(path: string): string {
   let base = path;
   let tail = '';
@@ -274,8 +271,6 @@ export class ClaudeSdkRunner implements AgentRunner {
       abortController,
       tools: roleTools,
       allowedTools: [
-        // allowedTools are auto-approved and never reach canUseTool; confined
-        // roles must leave read tools off the list so the boundary guard runs.
         ...(job.confineReads ? [] : READ_ONLY_TOOLS.filter((t) => roleTools.includes(t))),
         ...(job.browser ? PLAYWRIGHT_TOOLS : []),
         ...Object.keys(job.mcpServers ?? {}).map((name) => `mcp__${name}`),

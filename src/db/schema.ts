@@ -212,9 +212,6 @@ export function createSchema(db: Database.Database): void {
       try {
         db.exec(migration.sql);
       } catch (err) {
-        // A user_version-era database may have received some of these columns
-        // from a build whose migration list ordered differently; absorb the
-        // overlap and apply only what is missing.
         if (!isDuplicateColumn(err)) throw err;
         for (const statement of migration.sql.split(';')) {
           const sql = statement.trim();
