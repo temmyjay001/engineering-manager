@@ -15,6 +15,7 @@ import { epicLeadTimeMs, humanDuration, ticketLeadTimeMs } from './domain/timing
 import type { ArtifactKind, Ticket, TicketState } from './domain/types';
 import { assertGitRepo, removeWorktree, worktreePath } from './git/worktree';
 import { agentParticipants } from './meetings';
+import { availableMemory } from './mem';
 import {
   cancelRun,
   landRun,
@@ -810,7 +811,7 @@ function doctor(): void {
   if (failures > 0) fail(`${failures} check${failures === 1 ? '' : 's'} failed.`);
   if (warnings > 0) console.log(`Passed with ${warnings} warning${warnings === 1 ? '' : 's'}.`);
   else console.log('All checks passed.');
-  const freeGb = os.freemem() / 1024 ** 3;
+  const freeGb = availableMemory() / 1024 ** 3;
   const totalGb = os.totalmem() / 1024 ** 3;
   const headroom = Math.max(1, Math.floor((freeGb - 2) / 2.5));
   console.log(`  mem   ${freeGb.toFixed(1)}GB free of ${totalGb.toFixed(1)}GB`);
