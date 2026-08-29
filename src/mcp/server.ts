@@ -14,6 +14,7 @@ interface ToolDef {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
+  annotations?: { readOnlyHint: boolean };
 }
 
 const stringArg = (description: string) => ({ type: 'string', description });
@@ -22,11 +23,14 @@ function obj(properties: Record<string, unknown>, required: string[]): Record<st
   return { type: 'object', properties, required, additionalProperties: false };
 }
 
+const INSTRUCTIONS = `em runs a ticket pipeline: create_ticket, then run_ticket, which drives the ticket to AWAIT_APPROVAL with acceptance criteria. Present those criteria to a human and wait for their explicit decision; approving a ticket is never done on the agent's own judgment. Once the human approves (approve_ticket) or gives feedback (reject_ticket), the pipeline continues automatically through development and review gates. Use status and show_ticket to check on work, and report for delivery and spend metrics.`;
+
 const TOOLS: ToolDef[] = [
   {
     name: 'status',
     description: 'List every epic and ticket with statuses and costs. Start here to see the board.',
     inputSchema: obj({}, []),
+    annotations: { readOnlyHint: true },
   },
   {
     name: 'create_ticket',
@@ -44,6 +48,7 @@ const TOOLS: ToolDef[] = [
     name: 'show_ticket',
     description: 'Full ticket detail: status, acceptance criteria, transition history, cost, and artifact kinds.',
     inputSchema: obj({ key: stringArg('Ticket key') }, ['key']),
+    annotations: { readOnlyHint: true },
   },
   {
     name: 'approve_ticket',
@@ -85,6 +90,7 @@ const TOOLS: ToolDef[] = [
     name: 'report',
     description: 'Delivery, quality-gate, spend, and run metrics over a window, with cost advice.',
     inputSchema: obj({ days: { type: 'number', description: 'Window in days; omit for 30, use 0 for all time' } }, []),
+    annotations: { readOnlyHint: true },
   },
 ];
 
@@ -96,6 +102,18 @@ export class EmMcpServer {
 
   get tools(): ToolDef[] {
     return TOOLS;
+  }
+
+  async handleLine(line: string): Promise<object | null> {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('{')) return null;
+    let message: any;
+    try {
+      message = JSON.parse(trimmed);
+    } catch {
+      return { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } };
+    }
+    return this.handle(message);
   }
 
   async handle(message: any): Promise<object | null> {
@@ -126,6 +144,7 @@ export class EmMcpServer {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: {} },
           serverInfo: { name: 'emorg', version: pkg.version },
+          instructions: INSTRUCTIONS,
         };
       case 'ping':
         return {};
@@ -148,7 +167,7 @@ export class EmMcpServer {
           const epics = store.listEpics().map((e) => ({ ...e, subtickets: store.getSubtickets(e.id).map((t) => t.key) }));
           const tickets = store.listTickets().map((t) => ({
             key: t.key,
-            title: t.title,
+            title: t.title || t.description.slice(0, 50),
             status: t.status,
             epicId: t.epicId,
             costUsd: store.ticketCostUsd(t.id),
@@ -292,15 +311,7 @@ export async function serveMcpStdio(ctx: Ctx): Promise<void> {
   const rl = createInterface({ input: process.stdin });
   await new Promise<void>((resolvePromise) => {
     rl.on('line', (line) => {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith('{')) return;
-      let message: any;
-      try {
-        message = JSON.parse(trimmed);
-      } catch {
-        return;
-      }
-      void server.handle(message).then((response) => {
+      void server.handleLine(line).then((response) => {
         if (response) process.stdout.write(`${JSON.stringify(response)}\n`);
       });
     });
